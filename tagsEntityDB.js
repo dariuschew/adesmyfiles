@@ -9,18 +9,20 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// GET all comments
+// GET all tags
 app.get("/tags", function (req, res) {
   console.log("Received request to get all tags.");
-  tags.getAllTags(function (err, result) {
-    if (!err) {
+  tags
+    .getAllTags()
+    .then((tags) => {
       console.log("Successfully retrieved all tags.");
-      res.status(200).send(result);
-    } else {
+      const tagObjects = tags.map((tag) => tag.toObject());
+      res.status(200).json(tagObjects); // Send as JSON
+    })
+    .catch((err) => {
       console.error("Error retrieving all tags:", err);
       res.status(500).send(err);
-    }
-  });
+    });
 });
 
 module.exports = app;
