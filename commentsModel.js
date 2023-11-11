@@ -195,6 +195,47 @@ var commentFunctions = {
       });
     });
   },
+
+  // Function to get comments sorted
+  getCommentsSorted: function (sortBy) {
+    return new Promise((resolve, reject) => {
+      var conn = db.getConnection();
+      conn.connect((err) => {
+        if (err) {
+          console.log("Error connecting to database:", err);
+          reject(err);
+        } else {
+          var sql;
+          if (sortBy === "upvotes") {
+            sql = "SELECT * FROM Comments ORDER BY comment_upvotes DESC";
+          } else if (sortBy === "recent") {
+            sql = "SELECT * FROM Comments ORDER BY time_commented DESC";
+          }
+          conn.query(sql, (err, result) => {
+            conn.end();
+            if (err) {
+              console.log("Error executing getCommentsSorted query:", err);
+              reject(err);
+            } else {
+              var comments = result.map(
+                (row) =>
+                  new Comments(
+                    row.comment_id,
+                    row.post_id,
+                    row.commenter_id,
+                    row.comment_text,
+                    row.comment_upvotes,
+                    row.comment_downvotes,
+                    row.time_created
+                  )
+              );
+              resolve(comments);
+            }
+          });
+        }
+      });
+    });
+  },
 };
 
 module.exports = commentFunctions;

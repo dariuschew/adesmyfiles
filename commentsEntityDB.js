@@ -106,4 +106,20 @@ app.put("/comments/downvote/:id", function (req, res) {
     });
 });
 
+// GET sorted comments
+app.get("/comments/sorted/:sortBy", function (req, res) {
+  var sortBy = req.params.sortBy;
+  console.log(`Received request to get comments sorted by: ${sortBy}`);
+  comment
+    .getCommentsSorted(sortBy)
+    .then((comments) => {
+      const commentObjects = comments.map((c) => c.toObject());
+      res.status(200).json(commentObjects);
+    })
+    .catch((err) => {
+      console.error(`Error retrieving comments sorted by ${sortBy}:`, err);
+      res.status(500).send(err);
+    });
+});
+
 module.exports = app;
