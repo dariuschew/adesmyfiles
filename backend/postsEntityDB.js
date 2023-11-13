@@ -76,6 +76,22 @@ app.delete("/posts/:id", function (req, res) {
     });
 });
 
+// SEARCH for posts by title
+app.get("/posts/title/:searchTerm", function (req, res) {
+  var searchTerm = req.params.searchTerm;
+  console.log("Received request to search posts with title:", searchTerm);
+  post
+    .searchPostsByTitle(searchTerm)
+    .then((posts) => {
+      const postObjects = posts.map((p) => p.toObject());
+      res.status(200).json(postObjects);
+    })
+    .catch((err) => {
+      console.error("Error searching posts by title:", err);
+      res.status(500).send(err);
+    });
+});
+
 // SEARCH for posts by tag
 app.get("/posts/tag/:tagId", function (req, res) {
   var tagId = req.params.tagId;

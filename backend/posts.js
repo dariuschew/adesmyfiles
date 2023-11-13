@@ -1,26 +1,36 @@
 class Posts {
   constructor(
     post_id,
-    poster_id,
-    tag_id,
     post_title,
     post_desc,
     image_url,
     comment_count,
     post_upvotes,
     post_downvotes,
-    time_created
+    time_created,
+    tag_name,
+    full_name,
+    username,
+    email,
+    user_class,
+    date_of_birth,
+    user_image_url
   ) {
     this.post_id = post_id;
-    this.poster_id = poster_id;
-    this.tag_id = tag_id;
     this.post_title = post_title;
     this.post_desc = post_desc;
     this.image_url = image_url;
-    this.comment_count = comment_count || 0; // default to 0 if undefined
-    this.post_upvotes = post_upvotes || 0; // default to 0 if undefined
-    this.post_downvotes = post_downvotes || 0; // default to 0 if undefined
-    this.time_created = time_created || new Date(); // default to current time if undefined
+    this.comment_count = comment_count || 0;
+    this.post_upvotes = post_upvotes || 0;
+    this.post_downvotes = post_downvotes || 0;
+    this.time_created = time_created;
+    this.tag_name = tag_name;
+    this.full_name = full_name;
+    this.username = username;
+    this.email = email;
+    this.user_class = user_class;
+    this.date_of_birth = date_of_birth;
+    this.user_image_url = user_image_url;
   }
 
   // Method to update post title
@@ -57,8 +67,6 @@ class Posts {
   toObject() {
     return {
       post_id: this.post_id,
-      poster_id: this.poster_id,
-      tag_id: this.tag_id,
       post_title: this.post_title,
       post_desc: this.post_desc,
       image_url: this.image_url,
@@ -66,6 +74,13 @@ class Posts {
       post_upvotes: this.post_upvotes,
       post_downvotes: this.post_downvotes,
       time_created: this.time_created,
+      tag_name: this.tag_name,
+      full_name: this.full_name,
+      username: this.username,
+      email: this.email,
+      user_class: this.user_class,
+      date_of_birth: this.date_of_birth,
+      user_image_url: this.user_image_url,
     };
   }
 }

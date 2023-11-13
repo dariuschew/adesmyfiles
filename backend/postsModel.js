@@ -11,26 +11,40 @@ var postFunctions = {
           console.log("Error connecting to database:", err);
           reject(err);
         } else {
-          var sql = "SELECT * FROM Posts";
+          var sql =
+            "SELECT Posts.*, Images.image_url, Tags.tag_name, " +
+            "Users.full_name, Users.username, Users.email, Users.class, Users.date_of_birth, " +
+            "UserImages.image_url AS user_image_url " +
+            "FROM Posts " +
+            "LEFT JOIN Images ON Posts.image_id = Images.image_id " +
+            "LEFT JOIN Tags ON Posts.tag_id = Tags.tag_id " +
+            "LEFT JOIN Users ON Posts.poster_id = Users.user_id " +
+            "LEFT JOIN Images AS UserImages ON Users.image_id = UserImages.image_id";
           conn.query(sql, (err, result) => {
             conn.end();
             if (err) {
               console.log("Error executing getAllPosts query:", err);
               reject(err);
             } else {
+              // Map the result to create Posts instances
               var posts = result.map(
                 (row) =>
                   new Posts(
                     row.post_id,
-                    row.poster_id,
-                    row.tag_id,
                     row.post_title,
                     row.post_desc,
                     row.image_url,
                     row.comment_count,
                     row.post_upvotes,
                     row.post_downvotes,
-                    row.time_created
+                    row.time_created,
+                    row.tag_name,
+                    row.full_name,
+                    row.username,
+                    row.email,
+                    row.class,
+                    row.date_of_birth,
+                    row.user_image_url
                   )
               );
               resolve(posts);
@@ -112,7 +126,7 @@ var postFunctions = {
       });
     });
   },
-  
+
   // Function to search posts by title
   searchPostsByTitle: function (searchTerm) {
     return new Promise((resolve, reject) => {
@@ -122,7 +136,16 @@ var postFunctions = {
           console.log("Error connecting to database:", err);
           reject(err);
         } else {
-          var sql = "SELECT * FROM Posts WHERE post_title LIKE ?";
+          var sql =
+            "SELECT Posts.*, Images.image_url, Tags.tag_name, " +
+            "Users.full_name, Users.username, Users.email, Users.class, Users.date_of_birth, " +
+            "UserImages.image_url AS user_image_url " +
+            "FROM Posts " +
+            "LEFT JOIN Images ON Posts.image_id = Images.image_id " +
+            "LEFT JOIN Tags ON Posts.tag_id = Tags.tag_id " +
+            "LEFT JOIN Users ON Posts.poster_id = Users.user_id " +
+            "LEFT JOIN Images AS UserImages ON Users.image_id = UserImages.image_id " +
+            "WHERE Posts.post_title LIKE ?";
           var likeTerm = "%" + searchTerm + "%";
           conn.query(sql, likeTerm, (err, result) => {
             conn.end();
@@ -130,19 +153,25 @@ var postFunctions = {
               console.log("Error executing searchPostsByTitle query:", err);
               reject(err);
             } else {
+              // Map the result to create Posts instances
               var posts = result.map(
                 (row) =>
                   new Posts(
                     row.post_id,
-                    row.poster_id,
-                    row.tag_id,
                     row.post_title,
                     row.post_desc,
                     row.image_url,
                     row.comment_count,
                     row.post_upvotes,
                     row.post_downvotes,
-                    row.time_created
+                    row.time_created,
+                    row.tag_name,
+                    row.full_name,
+                    row.username,
+                    row.email,
+                    row.class,
+                    row.date_of_birth,
+                    row.user_image_url
                   )
               );
               resolve(posts);
@@ -163,26 +192,40 @@ var postFunctions = {
           reject(err);
         } else {
           var sql =
-            "SELECT Posts.* FROM Posts INNER JOIN Tags ON Posts.tag_id = Tags.tag_id WHERE Tags.tag_id = ?";
+            "SELECT Posts.*, Images.image_url, Tags.tag_name, " +
+            "Users.full_name, Users.username, Users.email, Users.class, Users.date_of_birth, " +
+            "UserImages.image_url AS user_image_url " +
+            "FROM Posts " +
+            "LEFT JOIN Images ON Posts.image_id = Images.image_id " +
+            "INNER JOIN Tags ON Posts.tag_id = Tags.tag_id " +
+            "LEFT JOIN Users ON Posts.poster_id = Users.user_id " +
+            "LEFT JOIN Images AS UserImages ON Users.image_id = UserImages.image_id " +
+            "WHERE Tags.tag_id = ?";
           conn.query(sql, tagId, (err, result) => {
             conn.end();
             if (err) {
               console.log("Error executing searchPostsByTag query:", err);
               reject(err);
             } else {
+              // Map the result to create Posts instances
               var posts = result.map(
                 (row) =>
                   new Posts(
                     row.post_id,
-                    row.poster_id,
-                    row.tag_id,
                     row.post_title,
                     row.post_desc,
                     row.image_url,
                     row.comment_count,
                     row.post_upvotes,
                     row.post_downvotes,
-                    row.time_created
+                    row.time_created,
+                    row.tag_name,
+                    row.full_name,
+                    row.username,
+                    row.email,
+                    row.class,
+                    row.date_of_birth,
+                    row.user_image_url
                   )
               );
               resolve(posts);
@@ -253,10 +296,19 @@ var postFunctions = {
           reject(err);
         } else {
           var sql;
+          var baseSql =
+            "SELECT Posts.*, Images.image_url, Tags.tag_name, " +
+            "Users.full_name, Users.username, Users.email, Users.class, Users.date_of_birth, " +
+            "UserImages.image_url AS user_image_url " +
+            "FROM Posts " +
+            "LEFT JOIN Images ON Posts.image_id = Images.image_id " +
+            "LEFT JOIN Tags ON Posts.tag_id = Tags.tag_id " +
+            "LEFT JOIN Users ON Posts.poster_id = Users.user_id " +
+            "LEFT JOIN Images AS UserImages ON Users.image_id = UserImages.image_id ";
           if (sortBy === "upvotes") {
-            sql = "SELECT * FROM Posts ORDER BY post_upvotes DESC";
+            sql = baseSql + "ORDER BY Posts.post_upvotes DESC";
           } else if (sortBy === "recent") {
-            sql = "SELECT * FROM Posts ORDER BY time_created DESC";
+            sql = baseSql + "ORDER BY Posts.time_created DESC";
           }
           conn.query(sql, (err, result) => {
             conn.end();
@@ -264,19 +316,25 @@ var postFunctions = {
               console.log("Error executing getPostsSorted query:", err);
               reject(err);
             } else {
+              // Map the result to create Posts instances
               var posts = result.map(
                 (row) =>
                   new Posts(
                     row.post_id,
-                    row.poster_id,
-                    row.tag_id,
                     row.post_title,
                     row.post_desc,
                     row.image_url,
                     row.comment_count,
                     row.post_upvotes,
                     row.post_downvotes,
-                    row.time_created
+                    row.time_created,
+                    row.tag_name,
+                    row.full_name,
+                    row.username,
+                    row.email,
+                    row.class,
+                    row.date_of_birth,
+                    row.user_image_url
                   )
               );
               resolve(posts);
