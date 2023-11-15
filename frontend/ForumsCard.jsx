@@ -1,7 +1,10 @@
 import React from "react";
-import "../css/ForumsCard.css"; // Assume you have some CSS for styling
+import axios from "axios";
+import "../css/ForumsCard.css";
+import { Link } from "react-router-dom";
 
 const ForumsCard = ({
+  postId,
   post_title,
   tags,
   post_desc,
@@ -13,6 +16,7 @@ const ForumsCard = ({
   image_url,
   username,
   user_image_url,
+  onVoteChange,
 }) => {
   // Function to format the date/time
   const formatDate = (dateString) => {
@@ -35,23 +39,65 @@ const ForumsCard = ({
       ))
     : null;
 
+  const handleUpvote = async () => {
+    try {
+      const response = await axios.post(
+        `http://localhost:8081/posts/${postId}/upvote`
+      );
+      // Check if the response is successful and contains the updated count
+      if (response.status === 200) {
+        // Call the onVoteChange with new upvote count
+        onVoteChange(postId, post_upvotes + 1, post_downvotes);
+      }
+    } catch (error) {
+      console.error("Error upvoting post:", error);
+    }
+  };
+
+  const handleDownvote = async () => {
+    try {
+      const response = await axios.post(
+        `http://localhost:8081/posts/${postId}/downvote`
+      );
+      // Check if the response is successful and contains the updated count
+      if (response.status === 200) {
+        // Call the onVoteChange with new downvote count
+        onVoteChange(postId, post_upvotes, post_downvotes + 1);
+      }
+    } catch (error) {
+      console.error("Error downvoting post:", error);
+    }
+  };
+
   return (
     <div className="post">
       <div className="post-vote">
-        <button className="vote-button">▲</button>
+        <button className="vote-button" onClick={handleUpvote}>
+          ▲
+        </button>
         <div className="vote-count">{post_upvotes - post_downvotes}</div>
-        <button className="vote-button">▼</button>
+        <button className="vote-button" onClick={handleDownvote}>
+          ▼
+        </button>
       </div>
       <div className="post-content">
-        <div style= {{marginRight: "40px"}}>
+        <div style={{ marginRight: "40px" }}>
           {" "}
           <img src={image_url} alt={post_title} className="post-image" />
         </div>
         <div className="text-content">
           {" "}
           {/* New wrapper for text */}
-          <h3 className="post-title" style = {{fontWeight: "bold"}}>{post_title}</h3>
-          {tag_name && <div className="post-tag" style={{textAlign: "center"}}>{tag_name}</div>}
+          <Link to={`/posts/${postId}`}>
+            <h3 className="post-title" style={{ fontWeight: "bold" }}>
+              {post_title}
+            </h3>
+          </Link>
+          {tag_name && (
+            <div className="post-tag" style={{ textAlign: "center" }}>
+              {tag_name}
+            </div>
+          )}
           <div className="post-description">{post_desc}</div>
           <div className="post-footer">
             {user_image_url && (

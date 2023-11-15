@@ -1,30 +1,27 @@
 /* ForumsCard.css */
-
-/* Add some general styling for better typography */
 body {
-  font-family: "Arial", sans-serif; /* Use a modern font-family */
-  line-height: 1.6; /* Adjust line height for better readability */
-  color: #333; /* A slightly less harsh color than black for text */
+  font-family: "Arial", sans-serif; 
+  line-height: 1.6; 
+  color: #333; 
 }
 
 /* Card container */
 .post {
   background: #ffffff;
-  border-radius: 10px; /* More pronounced rounded corners */
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); /* A softer shadow */
+  border-radius: 10px; 
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1); 
   display: flex;
   margin-bottom: 20px;
   overflow: hidden;
-  transition: box-shadow 0.3s ease; /* Transition for shadow on hover */
+  transition: box-shadow 0.3s ease; 
 }
 
 .post:hover {
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2); /* More prominent shadow on hover */
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
 }
 
-/* Voting section */
 .post-vote {
-  background: #f8f9fa; /* A lighter background to distinguish the section */
+  background: #f8f9fa; 
   padding: 15px;
   display: flex;
   flex-direction: column;
@@ -33,91 +30,83 @@ body {
 }
 
 .vote-button {
-  background-color: #e9ecef; /* Give the buttons a background color */
-  border-radius: 50%; /* Make the buttons circular */
-  width: 30px; /* Set a fixed width */
-  height: 30px; /* Set a fixed height */
+  background-color: #e9ecef; 
+  border-radius: 50%;
+  width: 30px; 
+  height: 30px; 
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background-color 0.2s; /* Transition for button background color */
+  transition: background-color 0.2s; 
 }
 
 .vote-button:hover {
-  background-color: #d0d4d9; /* Darken button background on hover */
+  background-color: #d0d4d9; 
 }
 
 /* Image styling */
 .post-image {
-  max-width: 300px; /* Maintain aspect ratio */
-  max-height: 300px; /* Set a maximum height */
-  object-fit: cover; /* Ensure the image covers the area nicely */
-  border-radius: 8px; /* Rounded corners for the image */
+  max-width: 300px;
+  max-height: 300px; 
+  object-fit: cover; 
+  border-radius: 8px; 
   margin-right: 20px;
 }
 
 /* Content section */
 .post-content {
-  padding: 20px; /* More padding for breathing room */
-  flex-grow: 1; /* Ensure it fills the space */
+  padding: 20px; 
+  flex-grow: 1; 
   display: flex;
   align-items: center;
 }
 
 .text-content {
-  /* New CSS for the text wrapper */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
 
 .post-title {
-  font-size: 1.25rem; /* Larger font size for the title */
-  color: #007bff; /* A color to make the title stand out */
-  margin-bottom: 0.5rem; /* Adjusted spacing */
+  font-size: 1.25rem; 
+  color: #007bff; 
+  margin-bottom: 0.5rem; 
 }
 
 .post-description {
-  font-size: 0.9rem; /* Slightly smaller font for the description */
-  color: #495057; /* A color that is easy on the eyes */
-  margin-bottom: 1rem; /* More space between the description and the footer */
+  font-size: 0.9rem;
+  color: #495057; 
+  margin-bottom: 1rem; 
 }
 
 /* Footer section */
 .post-footer {
     margin-top: 25px;
-  font-size: 0.8rem; /* Smaller font size for a less dominant footer */
-  color: #6c757d; /* A muted color for less important information */
-  display: flex; /* Use flex to align children horizontally */
-  align-items: center; /* Align items vertically in the center */
-  gap: 10px; /* This creates consistent spacing between items */
-}
-
-.post-author,
-.post-timestamp,
-.post-comments {
-  /* display: block; Stack these elements instead of side by side */
+  font-size: 0.8rem; 
+  color: #6c757d;
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
 }
 
 .post-author:before {
-  content: "By "; /* Add some text before the author */
+  content: "By "; 
 }
 
-/* Comments link styling */
 .post-comments {
-  color: #007bff; /* Use the primary color for interactive elements */
-  text-decoration: none; /* No underline */
-  transition: color 0.2s; /* Transition for color change */
+  color: #007bff; 
+  text-decoration: none; 
+  transition: color 0.2s;
   margin-left: 30px;
 }
 
 .post-comments:hover {
-  color: #0056b3; /* Darken color on hover */
+  color: #0056b3; 
 }
 
 .container {
   width: 100%;
-  max-width: 1200px; /* Or whatever maximum width you prefer */
+  max-width: 1200px; 
   margin-right: auto;
   margin-left: auto;
   padding-right: 15px;
@@ -133,19 +122,18 @@ body {
   margin-bottom: 30px;
   font-size: 0.8rem;
   white-space: nowrap;
-  max-width: 140px; /* Maximum width for the tag */
-  overflow: hidden; /* Hide overflow */
-  text-overflow: ellipsis; /* Add ellipsis to overflow text */
+  max-width: 140px; 
+  overflow: hidden; 
+  text-overflow: ellipsis;
 }
 
 .user-image {
-  width: 30px; /* Adjust as needed */
-  height: 30px; /* Adjust as needed */
-  border-radius: 50%; /* Circular image */
-  /* margin-right: 10px; */
+  width: 30px; 
+  height: 30px; 
+  border-radius: 50%;
 }
 
 .username {
-  font-weight: bold; /* Optional: if you want the username to stand out */
+  font-weight: bold;
   margin-right: 30px;
 }

@@ -92,18 +92,18 @@ app.get("/posts/title/:searchTerm", function (req, res) {
     });
 });
 
-// SEARCH for posts by tag
-app.get("/posts/tag/:tagId", function (req, res) {
-  var tagId = req.params.tagId;
-  console.log("Received request to search posts with tag ID:", tagId);
+// SEARCH for posts by tag name
+app.get("/posts/tag/:tagName", function (req, res) {
+  var tagName = req.params.tagName;
+  console.log("Received request to search posts with tag name:", tagName);
   post
-    .searchPostsByTag(tagId)
+    .searchPostsByTag(tagName)
     .then((posts) => {
-      const postObjects = posts.map((post) => post.toObject());
+      const postObjects = posts.map((p) => p.toObject());
       res.status(200).json(postObjects);
     })
     .catch((err) => {
-      console.error("Error searching posts by tag ID:", err);
+      console.error("Error searching posts by tag name:", err);
       res.status(500).send(err);
     });
 });
@@ -152,6 +152,46 @@ app.get("/posts/sorted/:sortBy", function (req, res) {
     })
     .catch((err) => {
       console.error(`Error retrieving posts sorted by ${sortBy}:`, err);
+      res.status(500).send(err);
+    });
+});
+
+//GET Combined search and sort endpoint
+app.get("/posts/search-and-sort", function (req, res) {
+  var searchTerm = req.query.searchTerm;
+  var sortBy = req.query.sortBy;
+  console.log(
+    `Received request to search and sort posts by: searchTerm=${searchTerm}, sortBy=${sortBy}`
+  );
+  post
+    .searchAndSortPosts(searchTerm, sortBy)
+    .then((posts) => {
+      const postObjects = posts.map((post) => post.toObject());
+      res.status(200).json(postObjects);
+    })
+    .catch((err) => {
+      console.error("Error searching and sorting posts:", err);
+      res.status(500).send(err);
+    });
+});
+
+// GET a single post by ID
+app.get("/posts/:id", function (req, res) {
+  var postId = req.params.id;
+  console.log(`Received request to get post with ID: ${postId}`);
+  post
+    .getPostById(postId)
+    .then((posts) => {
+      if (posts) {
+        const postObjects = posts.map((post) => post.toObject());
+        res.status(200).json(postObjects);
+      } else {
+        console.error("Error searching and sorting posts:", err);
+        res.status(404).send({ message: "Post not found" });
+      }
+    })
+    .catch((err) => {
+      console.error(`Error retrieving post with ID ${postId}:`, err);
       res.status(500).send(err);
     });
 });
