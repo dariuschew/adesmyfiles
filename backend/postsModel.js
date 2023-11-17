@@ -310,7 +310,7 @@ var postFunctions = {
               baseSql +
               "ORDER BY (Posts.post_upvotes)-(Posts.post_downvotes) DESC";
           } else if (sortBy === "recent") {
-            sql = baseSql + "ORDER BY Posts.time_created ASC";
+            sql = baseSql + "ORDER BY Posts.time_created DESC";
           }
           conn.query(sql, (err, result) => {
             conn.end();
@@ -376,7 +376,7 @@ var postFunctions = {
             sortClause =
               "ORDER BY (Posts.post_upvotes)-(Posts.post_downvotes) DESC";
           } else if (sortBy === "recent") {
-            sortClause = "ORDER BY Posts.time_created ASC";
+            sortClause = "ORDER BY Posts.time_created DESC";
           }
 
           var sql = baseSql + searchClause + sortClause;
@@ -426,7 +426,7 @@ var postFunctions = {
         } else {
           var sql =
             "SELECT Posts.*, Images.image_url, Tags.tag_name, " +
-            "Users.full_name, Users.username, Users.email, Users.class, Users.date_of_birth, " +
+            "Users.user_id , Users.full_name, Users.username, Users.email, Users.class, Users.date_of_birth, " +
             "UserImages.image_url AS user_image_url " +
             "FROM Posts " +
             "LEFT JOIN Images ON Posts.image_id = Images.image_id " +
@@ -440,27 +440,27 @@ var postFunctions = {
               console.log("Error executing getPostById query:", err);
               reject(err);
             } else {
-              var posts = result.map(
-                (row) =>
-                  new Posts(
-                    row.post_id,
-                    row.post_title,
-                    row.post_desc,
-                    row.image_url,
-                    row.comment_count,
-                    row.post_upvotes,
-                    row.post_downvotes,
-                    row.time_created,
-                    row.tag_name,
-                    row.full_name,
-                    row.username,
-                    row.email,
-                    row.class,
-                    row.date_of_birth,
-                    row.user_image_url
-                  )
-              );
-              resolve(posts);
+              // var posts = result.map(
+              //   (row) =>
+              //     new Posts(
+              //       row.post_id,
+              //       row.post_title,
+              //       row.post_desc,
+              //       row.image_url,
+              //       row.comment_count,
+              //       row.post_upvotes,
+              //       row.post_downvotes,
+              //       row.time_created,
+              //       row.tag_name,
+              //       row.full_name,
+              //       row.username,
+              //       row.email,
+              //       row.class,
+              //       row.date_of_birth,
+              //       row.user_image_url
+              //     )
+              // );
+              resolve(result);
             }
           });
         }

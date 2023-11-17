@@ -183,8 +183,8 @@ app.get("/posts/:id", function (req, res) {
     .getPostById(postId)
     .then((posts) => {
       if (posts) {
-        const postObjects = posts.map((post) => post.toObject());
-        res.status(200).json(postObjects);
+        // const postObjects = posts.map((post) => post.toObject());
+        res.status(200).json(posts);
       } else {
         console.error("Error searching and sorting posts:", err);
         res.status(404).send({ message: "Post not found" });

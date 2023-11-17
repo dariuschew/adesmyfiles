@@ -24,7 +24,7 @@ var commentFunctions = {
                     row.comment_id,
                     row.post_id,
                     row.commenter_id,
-                    row.comment_text,
+                    row.comment,
                     row.comment_upvotes,
                     row.comment_downvotes,
                     row.time_created
@@ -119,26 +119,27 @@ var commentFunctions = {
           console.log(err);
           reject(err);
         } else {
-          var sql = "SELECT * FROM Comments WHERE post_id = ?";
+          var sql =
+            "SELECT Comments.* , Users.* , Images.* FROM Comments JOIN Users ON Comments.user_id = Users.user_id LEFT JOIN Images ON Users.image_id = Images.image_id WHERE Comments.post_id = ?";
           conn.query(sql, [postId], function (err, result) {
             conn.end();
             if (err) {
               console.log(err);
               reject(err);
             } else {
-              var comments = result.map(
-                (row) =>
-                  new Comments(
-                    row.comment_id,
-                    row.post_id,
-                    row.commenter_id,
-                    row.comment_text,
-                    row.comment_upvotes,
-                    row.comment_downvotes,
-                    row.time_created
-                  )
-              );
-              resolve(comments);
+              // var comments = result.map(
+              //   (row) =>
+              //     new Comments(
+              //       row.comment_id,
+              //       row.post_id,
+              //       row.commenter_id,
+              //       row.comment,
+              //       row.comment_upvotes,
+              //       row.comment_downvotes,
+              //       row.time_created
+              //     )
+              // );
+              resolve(result);
             }
           });
         }
@@ -207,9 +208,11 @@ var commentFunctions = {
         } else {
           var sql;
           if (sortBy === "upvotes") {
-            sql = "SELECT * FROM Comments ORDER BY comment_upvotes DESC";
+            sql =
+              "SELECT Comments.* , Users.* , Images.* FROM Comments JOIN Users ON Comments.user_id = Users.user_id LEFT JOIN Images ON Users.image_id = Images.image_id ORDER BY (comment_upvotes - comment_downvotes) DESC";
           } else if (sortBy === "recent") {
-            sql = "SELECT * FROM Comments ORDER BY time_commented DESC";
+            sql =
+              "SELECT Comments.* , Users.* , Images.* FROM Comments JOIN Users ON Comments.user_id = Users.user_id LEFT JOIN Images ON Users.image_id = Images.image_id ORDER BY time_commented DESC";
           }
           conn.query(sql, (err, result) => {
             conn.end();
@@ -217,19 +220,19 @@ var commentFunctions = {
               console.log("Error executing getCommentsSorted query:", err);
               reject(err);
             } else {
-              var comments = result.map(
-                (row) =>
-                  new Comments(
-                    row.comment_id,
-                    row.post_id,
-                    row.commenter_id,
-                    row.comment_text,
-                    row.comment_upvotes,
-                    row.comment_downvotes,
-                    row.time_created
-                  )
-              );
-              resolve(comments);
+              // var comments = result.map(
+              //   (row) =>
+              //     new Comments(
+              //       row.comment_id,
+              //       row.post_id,
+              //       row.commenter_id,
+              //       row.comment,
+              //       row.comment_upvotes,
+              //       row.comment_downvotes,
+              //       row.time_created
+              //     )
+              // );
+              resolve(result);
             }
           });
         }

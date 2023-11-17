@@ -70,8 +70,8 @@ app.get("/comments/post/:postId", function (req, res) {
   comment
     .getCommentsByPostId(postId)
     .then((comments) => {
-      const commentObjects = comments.map((c) => c.toObject());
-      res.status(200).json(commentObjects);
+     // const commentObjects = comments.map((c) => c.toObject());
+      res.status(200).json(comments);
     })
     .catch((err) => {
       res.status(500).send(err);
@@ -113,8 +113,8 @@ app.get("/comments/sorted/:sortBy", function (req, res) {
   comment
     .getCommentsSorted(sortBy)
     .then((comments) => {
-      const commentObjects = comments.map((c) => c.toObject());
-      res.status(200).json(commentObjects);
+    //  const commentObjects = comments.map((c) => c.toObject());
+      res.status(200).json(comments);
     })
     .catch((err) => {
       console.error(`Error retrieving comments sorted by ${sortBy}:`, err);
