@@ -1,6 +1,8 @@
 import React, { useState, useRef } from "react";
 import axios from "axios";
 import { FaThumbsUp, FaThumbsDown, FaPen, FaTrash } from "react-icons/fa";
+import { API_URL } from "../config";
+import { useNavigate } from 'react-router-dom';
 
 const PostDetailsCard = ({
   post,
@@ -16,7 +18,7 @@ const PostDetailsCard = ({
   const handleUpvote = async () => {
     try {
       const response = await axios.post(
-        `http://localhost:8081/posts/${post.post_id}/upvote`
+        `${API_URL}/posts/${post.post_id}/upvote`
       );
       if (response.status === 200) {
         onVoteChange(post.post_id, post.post_upvotes + 1, post.post_downvotes);
@@ -29,7 +31,7 @@ const PostDetailsCard = ({
   const handleDownvote = async () => {
     try {
       const response = await axios.post(
-        `http://localhost:8081/posts/${post.post_id}/downvote`
+        `${API_URL}/posts/${post.post_id}/downvote`
       );
       if (response.status === 200) {
         onVoteChange(post.post_id, post.post_upvotes, post.post_downvotes + 1);
@@ -39,9 +41,10 @@ const PostDetailsCard = ({
     }
   };
 
-  // Function placeholders for handling edit and delete actions
+  const navigate = useNavigate();
+
   const handleEdit = () => {
-    console.log("Edit post");
+    navigate(`/editpost/${post.post_id}`);
   };
 
   const handleDelete = () => {

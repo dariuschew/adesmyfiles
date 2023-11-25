@@ -25,4 +25,21 @@ app.get("/tags", function (req, res) {
     });
 });
 
+// POST route to create a new tag
+app.post("/tags", function (req, res) {
+  const tagName = req.body.tagName;
+  console.log("Received request to create a new tag with name:", tagName);
+
+  tags
+    .createTag(tagName)
+    .then((newTag) => {
+      console.log("Successfully created a new tag.");
+      res.status(201).json(newTag.toObject());
+    })
+    .catch((err) => {
+      console.error("Error creating a new tag:", err);
+      res.status(500).send(err);
+    });
+});
+
 module.exports = app;

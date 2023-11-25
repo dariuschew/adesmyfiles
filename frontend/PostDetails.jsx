@@ -6,6 +6,7 @@ import PostDetailsCard from "../components/PostDetailsCard";
 import Navbar from "../components/Navbar";
 import Comment from "../components/Comments";
 import { useNavigate } from "react-router-dom";
+import { API_URL } from '../config';
 
 const PostDetails = () => {
   const [post, setPost] = useState(null);
@@ -21,7 +22,7 @@ const PostDetails = () => {
       console.log(`Attempting to fetch details for post with ID: ${postId}`);
       try {
         const response = await axios.get(
-          `http://localhost:8081/posts/${postId}`
+          `${API_URL}/posts/${postId}`
         );
         console.log(
           "Response data from post details useeffect is:",
@@ -42,7 +43,7 @@ const PostDetails = () => {
     const fetchComments = async () => {
       try {
         const response = await axios.get(
-          `http://localhost:8081/comments/post/${postId}`
+          `${API_URL}/comments/post/${postId}`
         );
         setComments(response.data);
       } catch (error) {
@@ -98,7 +99,7 @@ const PostDetails = () => {
   const handleCommentUpvote = async (commentId) => {
     try {
       const response = await axios.put(
-        `http://localhost:8081/comments/upvote/${commentId}`
+        `${API_URL}/comments/upvote/${commentId}`
       );
       if (response.status === 200) {
         // Update the comments state with the new upvote count
@@ -118,7 +119,7 @@ const PostDetails = () => {
   const handleCommentDownvote = async (commentId) => {
     try {
       const response = await axios.put(
-        `http://localhost:8081/comments/downvote/${commentId}`
+        `${API_URL}/comments/downvote/${commentId}`
       );
       if (response.status === 200) {
         // Update the comments state with the new downvote count
@@ -138,8 +139,8 @@ const PostDetails = () => {
   const fetchComments = async (sortBy = "") => {
     try {
       const url = sortBy
-        ? `http://localhost:8081/comments/sorted/${sortBy}`
-        : `http://localhost:8081/comments/post/${postId}`;
+        ? `${API_URL}/comments/sorted/${sortBy}`
+        : `${API_URL}/comments/post/${postId}`;
       const response = await axios.get(url);
       setComments(response.data);
     } catch (error) {
@@ -154,7 +155,7 @@ const PostDetails = () => {
   const handleDeleteComment = async (commentId) => {
     try {
       const response = await axios.delete(
-        `http://localhost:8081/comments/${commentId}`
+        `${API_URL}/comments/${commentId}`
       );
       if (response.status === 200) {
         // Filter out the deleted comment from the comments state
@@ -170,7 +171,7 @@ const PostDetails = () => {
   const handleEditComment = async (commentId, updatedComment) => {
     try {
       const response = await axios.put(
-        `http://localhost:8081/comments/${commentId}`,
+        `${API_URL}/comments/${commentId}`,
         { comment: updatedComment }
       );
       if (response.status === 200) {
@@ -213,7 +214,7 @@ const PostDetails = () => {
 
       // Send the POST request to your endpoint
       const response = await axios.post(
-        `http://localhost:8081/comments`,
+        `${API_URL}/comments`,
         commentData
       );
 
@@ -238,11 +239,11 @@ const PostDetails = () => {
     }
 
     const deleteCommentsPromises = comments.map((comment) =>
-      axios.delete(`http://localhost:8081/comments/${comment.comment_id}`)
+      axios.delete(`${API_URL}/comments/${comment.comment_id}`)
     );
 
     const deletePostPromise = axios.delete(
-      `http://localhost:8081/posts/${postId}`
+      `${API_URL}/posts/${postId}`
     );
 
     try {
@@ -258,7 +259,7 @@ const PostDetails = () => {
   console.log("Post data is available, rendering PostDetailsCard component.");
   return (
     <div>
-      <Navbar />
+      {/* <Navbar /> */}
       <div className="mx-auto p-5">
         <PostDetailsCard
           post={post}

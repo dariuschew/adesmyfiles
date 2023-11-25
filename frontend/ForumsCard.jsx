@@ -2,6 +2,7 @@ import React from "react";
 import axios from "axios";
 import "../css/ForumsCard.css";
 import { Link } from "react-router-dom";
+import { API_URL } from "../config";
 
 const ForumsCard = ({
   postId,
@@ -41,9 +42,7 @@ const ForumsCard = ({
 
   const handleUpvote = async () => {
     try {
-      const response = await axios.post(
-        `http://localhost:8081/posts/${postId}/upvote`
-      );
+      const response = await axios.post(`${API_URL}/posts/${postId}/upvote`);
       // Check if the response is successful and contains the updated count
       if (response.status === 200) {
         // Call the onVoteChange with new upvote count
@@ -56,9 +55,7 @@ const ForumsCard = ({
 
   const handleDownvote = async () => {
     try {
-      const response = await axios.post(
-        `http://localhost:8081/posts/${postId}/downvote`
-      );
+      const response = await axios.post(`${API_URL}/posts/${postId}/downvote`);
       // Check if the response is successful and contains the updated count
       if (response.status === 200) {
         // Call the onVoteChange with new downvote count

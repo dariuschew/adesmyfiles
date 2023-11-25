@@ -3,6 +3,7 @@ import axios from "axios";
 import ForumsCard from "./ForumsCard";
 import ForumsSearchBar from "./ForumsSearchBar";
 import FilterComponent from "./FilterComponent";
+import { API_URL } from "../config";
 
 const ForumsList = () => {
   const [posts, setPosts] = useState([]);
@@ -15,7 +16,7 @@ const ForumsList = () => {
 
   const fetchAllPosts = async () => {
     try {
-      const response = await axios.get("http://localhost:8081/posts");
+      const response = await axios.get(`${API_URL}/posts`);
       setPosts(response.data);
     } catch (error) {
       console.error("Error fetching posts:", error);

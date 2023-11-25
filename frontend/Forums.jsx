@@ -6,7 +6,7 @@ import ForumsList from '../components/ForumsList'
 const Forums = () => {
   return (
     <>
-      <Navbar></Navbar>
+      {/* <Navbar></Navbar> */}
       <ForumsList />
     </>
   )
