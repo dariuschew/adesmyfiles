@@ -9,14 +9,27 @@ app.use(cors());
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-// GET all posts
+// GET all posts with pagination
 app.get("/posts", function (req, res) {
-  console.log("Received request to get all posts.");
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 5;
+  const sortBy = req.query.sortBy || "";
+
+  console.log(
+    `Received request to get all posts. Page: ${page}, Limit: ${limit}`
+  );
+
   post
-    .getAllPosts()
-    .then((posts) => {
-      const postObjects = posts.map((p) => p.toObject());
-      res.status(200).json(postObjects);
+    .getAllPosts(page, limit, sortBy)
+    .then((data) => {
+      const { total, posts } = data;
+      console.log(
+        `Retrieved posts. Total: ${total}, Posts on current page: ${posts.length}`
+      );
+      res.status(200).json({
+        total: total,
+        posts: posts.map((p) => p.toObject()),
+      });
     })
     .catch((err) => {
       console.error("Error retrieving all posts:", err);
@@ -140,15 +153,23 @@ app.post("/posts/:id/downvote", function (req, res) {
     });
 });
 
-// GET sorted posts
+// GET sorted and paginated posts
 app.get("/posts/sorted/:sortBy", function (req, res) {
-  var sortBy = req.params.sortBy;
-  console.log(`Received request to get posts sorted by: ${sortBy}`);
+  const sortBy = req.params.sortBy;
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 5;
+  const offset = (page - 1) * limit;
+
+  console.log(
+    `Received request to get posts sorted by: ${sortBy} with page: ${page} and limit: ${limit}`
+  );
   post
-    .getPostsSorted(sortBy)
-    .then((posts) => {
-      const postObjects = posts.map((post) => post.toObject());
-      res.status(200).json(postObjects);
+    .getPostsSorted(sortBy, limit, offset)
+    .then((data) => {
+      res.status(200).json({
+        total: data.total,
+        posts: data.posts.map((post) => post.toObject()),
+      });
     })
     .catch((err) => {
       console.error(`Error retrieving posts sorted by ${sortBy}:`, err);
@@ -158,16 +179,24 @@ app.get("/posts/sorted/:sortBy", function (req, res) {
 
 //GET Combined search and sort endpoint
 app.get("/posts/search-and-sort", function (req, res) {
-  var searchTerm = req.query.searchTerm;
-  var sortBy = req.query.sortBy;
+  const searchTerm = req.query.searchTerm;
+  const sortBy = req.query.sortBy;
+  const page = parseInt(req.query.page, 10) || 1;
+  const limit = parseInt(req.query.limit, 10) || 5;
+  const offset = (page - 1) * limit;
+  const searchType = req.query.searchType;
+
   console.log(
-    `Received request to search and sort posts by: searchTerm=${searchTerm}, sortBy=${sortBy}`
+    `Received request to search and sort posts by: searchTerm=${searchTerm}, sortBy=${sortBy}, page=${page}, limit=${limit} , searchType=${searchType}`
   );
+
   post
-    .searchAndSortPosts(searchTerm, sortBy)
-    .then((posts) => {
-      const postObjects = posts.map((post) => post.toObject());
-      res.status(200).json(postObjects);
+    .searchAndSortPosts(searchTerm, sortBy, limit, offset, searchType)
+    .then((data) => {
+      res.status(200).json({
+        total: data.total,
+        posts: data.posts.map((post) => post.toObject()),
+      });
     })
     .catch((err) => {
       console.error("Error searching and sorting posts:", err);
@@ -194,6 +223,61 @@ app.get("/posts/:id", function (req, res) {
       console.error(`Error retrieving post with ID ${postId}:`, err);
       res.status(500).send(err);
     });
+});
+
+// INCREMENT comment count for a post
+app.post("/posts/:id/increment-comment-count", async function (req, res) {
+  var postId = req.params.id;
+  console.log(
+    `Received request to increment comment count for post with ID: ${postId}`
+  );
+
+  try {
+    await post.incrementCommentCount(postId);
+    console.log(
+      `Successfully incremented comment count for post with ID ${postId}.`
+    );
+    res.status(200).json({ message: "Comment count incremented successfully" });
+  } catch (err) {
+    console.error(
+      `Error incrementing comment count for post with ID ${postId}:`,
+      err
+    );
+    res.status(500).send(err);
+  }
+});
+
+// DECREMENT comment count for a post
+app.post("/posts/:id/decrement-comment-count", async function (req, res) {
+  var postId = req.params.id;
+  console.log(
+    `Received request to decrement comment count for post with ID: ${postId}`
+  );
+
+  try {
+    await post.decrementCommentCount(postId);
+    console.log(
+      `Successfully decremented comment count for post with ID ${postId}.`
+    );
+    res.status(200).json({ message: "Comment count decremented successfully" });
+  } catch (err) {
+    console.error(
+      `Error decrementing comment count for post with ID ${postId}:`,
+      err
+    );
+    res.status(500).send(err);
+  }
+});
+
+//[DATA MANIUPLATION]
+app.get("/top-contributors", async function (req, res) {
+  try {
+    const contributors = await post.getTopContributors();
+    res.status(200).json(contributors);
+  } catch (err) {
+    console.error("Error retrieving top contributors:", err);
+    res.status(500).send(err);
+  }
 });
 
 module.exports = app;

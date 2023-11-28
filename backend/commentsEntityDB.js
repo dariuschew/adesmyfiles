@@ -70,7 +70,7 @@ app.get("/comments/post/:postId", function (req, res) {
   comment
     .getCommentsByPostId(postId)
     .then((comments) => {
-     // const commentObjects = comments.map((c) => c.toObject());
+      // const commentObjects = comments.map((c) => c.toObject());
       res.status(200).json(comments);
     })
     .catch((err) => {
@@ -107,17 +107,36 @@ app.put("/comments/downvote/:id", function (req, res) {
 });
 
 // GET sorted comments
-app.get("/comments/sorted/:sortBy", function (req, res) {
+app.get("/comments/sorted/:sortBy/:postId", function (req, res) {
   var sortBy = req.params.sortBy;
-  console.log(`Received request to get comments sorted by: ${sortBy}`);
+  var postId = req.params.postId;
+  console.log(
+    `Received request to get comments sorted by: ${sortBy} for post: ${postId}`
+  );
   comment
-    .getCommentsSorted(sortBy)
+    .getCommentsSorted(sortBy, postId)
     .then((comments) => {
-    //  const commentObjects = comments.map((c) => c.toObject());
       res.status(200).json(comments);
     })
     .catch((err) => {
-      console.error(`Error retrieving comments sorted by ${sortBy}:`, err);
+      console.error(
+        `Error retrieving comments sorted by ${sortBy} for post: ${postId}:`,
+        err
+      );
+      res.status(500).send(err);
+    });
+});
+
+// GET count of comments by post ID
+app.get("/comments/count/:postId", function (req, res) {
+  var postId = req.params.postId;
+
+  comment
+    .countCommentsByPostId(postId)
+    .then((commentCount) => {
+      res.status(200).json({ postId: postId, commentCount: commentCount });
+    })
+    .catch((err) => {
       res.status(500).send(err);
     });
 });

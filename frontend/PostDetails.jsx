@@ -3,10 +3,9 @@ import React, { useState, useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
 import PostDetailsCard from "../components/PostDetailsCard";
-import Navbar from "../components/Navbar";
 import Comment from "../components/Comments";
 import { useNavigate } from "react-router-dom";
-import { API_URL } from '../config';
+import { API_URL } from "../config";
 
 const PostDetails = () => {
   const [post, setPost] = useState(null);
@@ -14,6 +13,7 @@ const PostDetails = () => {
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
   const newCommentRef = useRef(null);
+  const [commentCount, setCommentCount] = useState(0);
 
   const navigate = useNavigate();
 
@@ -21,9 +21,7 @@ const PostDetails = () => {
     const fetchPostDetails = async () => {
       console.log(`Attempting to fetch details for post with ID: ${postId}`);
       try {
-        const response = await axios.get(
-          `${API_URL}/posts/${postId}`
-        );
+        const response = await axios.get(`${API_URL}/posts/${postId}`);
         console.log(
           "Response data from post details useeffect is:",
           response.data
@@ -42,22 +40,30 @@ const PostDetails = () => {
 
     const fetchComments = async () => {
       try {
-        const response = await axios.get(
-          `${API_URL}/comments/post/${postId}`
-        );
+        const response = await axios.get(`${API_URL}/comments/post/${postId}`);
         setComments(response.data);
       } catch (error) {
         console.error("Error fetching comments:", error);
       }
     };
 
+    const fetchCommentCount = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/comments/count/${postId}`);
+        setCommentCount(response.data.commentCount);
+      } catch (error) {
+        console.error("Error fetching comment count:", error);
+      }
+    };
+
     if (postId) {
       fetchPostDetails();
       fetchComments();
+      fetchCommentCount();
     } else {
       console.error("No postId found in URL parameters.");
     }
-  }, [postId]);
+  }, [postId, commentCount]);
 
   if (!post) {
     console.log(
@@ -139,7 +145,7 @@ const PostDetails = () => {
   const fetchComments = async (sortBy = "") => {
     try {
       const url = sortBy
-        ? `${API_URL}/comments/sorted/${sortBy}`
+        ? `${API_URL}/comments/sorted/${sortBy}/${postId}`
         : `${API_URL}/comments/post/${postId}`;
       const response = await axios.get(url);
       setComments(response.data);
@@ -154,26 +160,33 @@ const PostDetails = () => {
 
   const handleDeleteComment = async (commentId) => {
     try {
-      const response = await axios.delete(
+      const deleteCommentPromise = axios.delete(
         `${API_URL}/comments/${commentId}`
       );
-      if (response.status === 200) {
-        // Filter out the deleted comment from the comments state
-        setComments((prevComments) =>
-          prevComments.filter((comment) => comment.comment_id !== commentId)
-        );
-      }
+
+      const decrementCommentCountPromise = axios.post(
+        `${API_URL}/posts/${postId}/decrement-comment-count`
+      );
+
+      await Promise.all([deleteCommentPromise, decrementCommentCountPromise]);
+
+      setComments((prevComments) =>
+        prevComments.filter((comment) => comment.comment_id !== commentId)
+      );
     } catch (error) {
-      console.error("Error deleting comment:", error);
+      console.error(
+        "Error deleting comment or updating post's comment count:",
+        error
+      );
     }
+    setCommentCount((prevCount) => prevCount - 1);
   };
 
   const handleEditComment = async (commentId, updatedComment) => {
     try {
-      const response = await axios.put(
-        `${API_URL}/comments/${commentId}`,
-        { comment: updatedComment }
-      );
+      const response = await axios.put(`${API_URL}/comments/${commentId}`, {
+        comment: updatedComment,
+      });
       if (response.status === 200) {
         setComments((prevComments) =>
           prevComments.map((comment) =>
@@ -199,7 +212,6 @@ const PostDetails = () => {
   const handleNewCommentSubmit = async () => {
     var currentUserId = 1;
 
-    // Prevent submission of empty comments
     if (!newComment.trim()) {
       console.log("Cannot submit an empty comment.");
       return;
@@ -212,21 +224,26 @@ const PostDetails = () => {
         comment: newComment,
       };
 
-      // Send the POST request to your endpoint
-      const response = await axios.post(
+      const createCommentPromise = axios.post(
         `${API_URL}/comments`,
         commentData
       );
 
-      if (response.status === 201) {
-        //  const newCommentFromResponse = response.data;
+      const incrementCommentCountPromise = axios.post(
+        `${API_URL}/posts/${postId}/increment-comment-count`
+      );
 
-        setNewComment("");
-        fetchComments();
-      }
+      await Promise.all([createCommentPromise, incrementCommentCountPromise]);
+
+      setNewComment("");
+      fetchComments();
     } catch (error) {
-      console.error("Error submitting new comment:", error);
+      console.error(
+        "Error submitting new comment or updating post's comment count:",
+        error
+      );
     }
+    setCommentCount((prevCount) => prevCount + 1);
   };
 
   const handleDeletePost = async () => {
@@ -242,9 +259,7 @@ const PostDetails = () => {
       axios.delete(`${API_URL}/comments/${comment.comment_id}`)
     );
 
-    const deletePostPromise = axios.delete(
-      `${API_URL}/posts/${postId}`
-    );
+    const deletePostPromise = axios.delete(`${API_URL}/posts/${postId}`);
 
     try {
       await Promise.all([...deleteCommentsPromises, deletePostPromise]);
@@ -256,7 +271,6 @@ const PostDetails = () => {
     }
   };
 
-  console.log("Post data is available, rendering PostDetailsCard component.");
   return (
     <div>
       {/* <Navbar /> */}
@@ -270,6 +284,10 @@ const PostDetails = () => {
 
         <div className="mt-10 max-w-4xl mx-auto bg-white rounded-lg shadow-lg overflow-hidden text-gray-800">
           <div className="flex justify-between items-center mt-4 bg-white p-4 shadow rounded-lg">
+            {/* Display the comment count */}
+            <div className="p-4 bg-white shadow rounded-lg mr-3">
+              <h3 className="text-lg font-semibold">{commentCount} Comments</h3>
+            </div>
             <div className="flex-grow pr-4">
               {" "}
               <select
@@ -281,6 +299,7 @@ const PostDetails = () => {
                 <option value="recent">By Recent</option>
               </select>
             </div>
+
             <button
               onClick={scrollToNewComment}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg shadow-lg transition duration-300 ease-in-out"

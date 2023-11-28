@@ -3,24 +3,90 @@ import axios from "axios";
 import ForumsCard from "./ForumsCard";
 import ForumsSearchBar from "./ForumsSearchBar";
 import FilterComponent from "./FilterComponent";
+import TopContributors from "./TopContributors";
 import { API_URL } from "../config";
 
 const ForumsList = () => {
   const [posts, setPosts] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [searchType, setSearchType] = useState("title");
+  const [searchType, setSearchType] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [postsPerPage, setPostsPerPage] = useState(5);
+  const [totalPosts, setTotalPosts] = useState(0);
+  const [activeFilter, setActiveFilter] = useState("");
 
   useEffect(() => {
     fetchAllPosts();
-  }, []);
+  }, [currentPage, postsPerPage, activeFilter, searchTerm]);
 
   const fetchAllPosts = async () => {
+    console.log("fetchAllPosts started");
+
+    let endpoint = searchTerm.trim() ? "/posts/search-and-sort" : "/posts";
+    console.log(`Endpoint determined: ${endpoint}`);
+
+    const params = {
+      page: currentPage,
+      limit: postsPerPage,
+      sortBy: activeFilter,
+    };
+    console.log("Initial params set", params);
+
+    console.log(
+      `Fetching posts with searchTerm: ${searchTerm}, searchType: ${searchType}, activeFilter: ${activeFilter}, currentPage: ${currentPage}`
+    );
+
+    if (searchTerm.trim()) {
+      console.log("Search term is present. Adjusting params for search.");
+      params.searchTerm = searchTerm;
+      params.sortBy = activeFilter;
+      console.log("Updated params for searchTerm", params);
+
+      if (searchType === "tags") {
+        console.log("Search type is tags");
+        params.searchType = "tag";
+      } else if (searchType === "title") {
+        console.log("Search type is title");
+        params.searchType = "title";
+      }
+      console.log("Final params after searchType adjustment", params);
+    } else if (activeFilter) {
+      console.log("Active filter is present without searchTerm");
+      params.sortBy = activeFilter;
+    }
+
     try {
-      const response = await axios.get(`${API_URL}/posts`);
-      setPosts(response.data);
+      console.log(
+        `Making API call to ${API_URL}${endpoint} with params`,
+        params
+      );
+      const response = await axios.get(`${API_URL}${endpoint}`, { params });
+      console.log("API call successful. Response received:", response);
+
+      const responseData = Array.isArray(response.data)
+        ? response.data[0]
+        : response.data;
+      console.log("Processed response data:", responseData);
+
+      if (responseData.total != null) {
+        console.log(`Total posts: ${responseData.total}`);
+        setTotalPosts(parseInt(responseData.total));
+      }
+
+      if (Array.isArray(responseData.posts)) {
+        console.log(`Number of posts received: ${responseData.posts.length}`);
+        setPosts(responseData.posts);
+      } else {
+        console.log(
+          "No posts array in response. Setting posts to empty array."
+        );
+        setPosts([]);
+      }
     } catch (error) {
       console.error("Error fetching posts:", error);
     }
+
+    console.log("fetchAllPosts completed");
   };
 
   const handleSearchChange = (event) => {
@@ -33,22 +99,17 @@ const ForumsList = () => {
 
   const handleSearchSubmit = async () => {
     if (!searchTerm.trim()) return;
-
-    const endpoint =
-      searchType === "title"
-        ? `/posts/title/${encodeURIComponent(searchTerm)}`
-        : `/posts/tag/${encodeURIComponent(searchTerm)}`;
-
-    try {
-      const response = await axios.get(`http://localhost:8081${endpoint}`);
-      setPosts(response.data);
-    } catch (error) {
-      console.error(`Error searching posts by ${searchType}:`, error);
-    }
+    setCurrentPage(1);
+    fetchAllPosts();
   };
 
   const handleClearSearch = () => {
+    console.log("Clearing search");
+    setSearchType("");
+    console.log(searchType);
+    setActiveFilter("");
     setSearchTerm("");
+    setCurrentPage(1);
     fetchAllPosts();
   };
 
@@ -62,68 +123,87 @@ const ForumsList = () => {
     );
   };
 
-  const handleFilterChange = async (sortBy) => {
-    try {
-      const endpoint = searchTerm.trim()
-        ? `/posts/search-and-sort?searchTerm=${encodeURIComponent(
-            searchTerm
-          )}&sortBy=${sortBy}`
-        : `/posts/sorted/${sortBy}`;
-
-      const response = await axios.get(`http://localhost:8081${endpoint}`);
-      setPosts(response.data);
-    } catch (error) {
-      console.error(`Error fetching posts:`, error);
-    }
+  const handleFilterChange = (filter) => {
+    setActiveFilter(filter);
+    setCurrentPage(1);
+    fetchAllPosts();
   };
 
-  // Render the list of forum cards
+  const totalPages = Math.ceil(totalPosts / postsPerPage);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    window.scrollTo(0, 0);
+  };
+
   return (
-    <div
-      style={{
-        width: "100%",
-        maxWidth: "1200px",
-        marginRight: "auto",
-        marginLeft: "auto",
-        padding: "15px",
-      }}
-    >
-      <div className=" px-4">
-        <ForumsSearchBar
-          value={searchTerm}
-          onChange={handleSearchChange}
-          onSearchTypeChange={handleSearchTypeChange}
-          onSearchSubmit={handleSearchSubmit}
-          onClearSearch={handleClearSearch}
-        />
-      </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="flex flex-col md:flex-row">
+        {/* Main content */}
+        <div className="w-full md:pr-4 lg:pr-6 md:w-2/3">
+          <div className=" px-4">
+            <ForumsSearchBar
+              value={searchTerm}
+              onChange={handleSearchChange}
+              onSearchTypeChange={handleSearchTypeChange}
+              onSearchSubmit={handleSearchSubmit}
+              onClearSearch={handleClearSearch}
+            />
+          </div>
 
-      <FilterComponent onFilterChange={handleFilterChange} />
-
-      {posts.length > 0 ? (
-        posts.map((post) => (
-          <ForumsCard
-            key={post.post_id}
-            postId={post.post_id}
-            post_title={post.post_title}
-            tag_name={post.tag_name}
-            post_desc={post.post_desc}
-            username={post.username}
-            poster_id={post.poster_id}
-            time_created={post.time_created}
-            comment_count={post.comment_count}
-            post_upvotes={post.post_upvotes}
-            post_downvotes={post.post_downvotes}
-            image_url={post.image_url}
-            user_image_url={post.user_image_url}
-            onVoteChange={handleVoteChange}
+          <FilterComponent
+            activeFilter={activeFilter}
+            onFilterChange={handleFilterChange}
           />
-        ))
-      ) : (
-        <div className="text-center py-10">
-          <p>No posts found. Try a different search term or filter.</p>
+
+          {posts.length > 0 ? (
+            posts.map((post) => (
+              <ForumsCard
+                key={post.post_id}
+                postId={post.post_id}
+                post_title={post.post_title}
+                tag_name={post.tag_name}
+                post_desc={post.post_desc}
+                username={post.username}
+                poster_id={post.poster_id}
+                time_created={post.time_created}
+                comment_count={post.comment_count}
+                post_upvotes={post.post_upvotes}
+                post_downvotes={post.post_downvotes}
+                image_url={post.image_url}
+                user_image_url={post.user_image_url}
+                onVoteChange={handleVoteChange}
+              />
+            ))
+          ) : (
+            <div className="text-center py-10">
+              <p>No posts found. Try a different search term or filter.</p>
+            </div>
+          )}
+
+          {/* Pagination controls */}
+          <div className="flex justify-center items-center space-x-2 my-4">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                disabled={currentPage === page}
+                className={`${
+                  currentPage === page
+                    ? "bg-blue-500 text-white"
+                    : "bg-white text-blue-500 hover:bg-blue-100"
+                } font-semibold py-2 px-4 border border-blue-500 rounded focus:outline-none focus:shadow-outline`}
+              >
+                {page}
+              </button>
+            ))}
+          </div>
         </div>
-      )}
+
+        <div className="w-full md:w-1/3 md:pl-4 lg:pl-6 mt-6 md:mt-0">
+          <TopContributors />
+        </div>
+      </div>
     </div>
   );
 };
