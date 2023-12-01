@@ -10,7 +10,7 @@ export default function CreatePostModal({ closeModal, userId }) {
     image_id: null,
     comment_count: 1,
     tag_id: null,
-    poster_id: userId || 1, // for testing LOL
+    poster_id: userId, 
   });
 
   const [tags, setTags] = useState([]);
