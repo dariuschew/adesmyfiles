@@ -1,3 +1,4 @@
+//state management 
 import React, { useState } from "react";
 
 const ForumsSearchBar = ({

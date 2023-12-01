@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+////state management
+import React, { useState, useEffect } from "react";
 import {
   FaArrowUp,
   FaArrowDown,
@@ -6,6 +7,8 @@ import {
   FaTrash,
   FaCheck,
 } from "react-icons/fa";
+import axios from "axios";
+import { API_URL } from "../config";
 
 const Comment = ({
   comment,
@@ -17,6 +20,27 @@ const Comment = ({
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editedComment, setEditedComment] = useState(comment.comment);
+  const [userVote, setUserVote] = useState(null);
+
+  useEffect(() => {
+    const fetchVoteStatus = async () => {
+      try {
+        const response = await axios.get(
+          `${API_URL}/comments/${comment.comment_id}/vote-status`,
+          { params: { userId: currentUserId } }
+        );
+        if (response.data.vote_type === "upvote") {
+          setUserVote("upvote");
+        } else if (response.data.vote_type === "downvote") {
+          setUserVote("downvote");
+        }
+      } catch (error) {
+        console.error("Error fetching vote status:", error);
+      }
+    };
+
+    fetchVoteStatus();
+  }, [comment.comment_id, currentUserId]);
 
   const handleEditClick = () => {
     setIsEditing(true);
@@ -39,6 +63,16 @@ const Comment = ({
     }).format(new Date(date));
   };
 
+  const handleUpvote = () => {
+    onUpvote(comment.comment_id);
+    setUserVote(userVote !== "upvote" ? "upvote" : null);
+  };
+
+  const handleDownvote = () => {
+    onDownvote(comment.comment_id);
+    setUserVote(userVote !== "downvote" ? "downvote" : null);
+  };
+
   return (
     <div className="flex items-start space-x-4 p-4 border-b border-gray-200">
       <img
@@ -52,15 +86,20 @@ const Comment = ({
           <h3 className="text-sm font-semibold">{comment.username}</h3>
           <div className="flex items-center space-x-1">
             <button
-              onClick={() => onUpvote(comment.comment_id)}
-              className="text-gray-500 hover:text-gray-700"
+              onClick={handleUpvote}
+              className={`text-gray-500 ${
+                userVote === "upvote" ? "text-blue-700" : ""
+              } `}
             >
               <FaArrowUp />
             </button>
             <span>{comment.comment_upvotes - comment.comment_downvotes}</span>
+
             <button
-              onClick={() => onDownvote(comment.comment_id)}
-              className="text-gray-500 hover:text-gray-700"
+              onClick={handleDownvote}
+              className={`text-gray-500 ${
+                userVote === "downvote" ? "text-red-600" : ""
+              } `}
             >
               <FaArrowDown />
             </button>

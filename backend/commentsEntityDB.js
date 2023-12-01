@@ -141,4 +141,52 @@ app.get("/comments/count/:postId", function (req, res) {
     });
 });
 
+// CREATE or UPDATE a vote for a comment
+app.post("/comments/:id/vote", function (req, res) {
+  const commentId = req.params.id;
+  const userId = req.body.userId;
+  const voteType = req.body.voteType;
+
+  comment
+    .createOrUpdateVote(userId, commentId, voteType)
+    .then((result) => {
+      res.status(201).json({ message: "Vote registered successfully", result });
+    })
+    .catch((err) => {
+      res.status(500).json({ message: "An error occurred", err });
+    });
+});
+
+// REMOVE a vote from a comment
+app.delete("/comments/:id/vote", function (req, res) {
+  const commentId = req.params.id;
+  const userId = req.body.userId;
+
+  comment
+    .removeVote(userId, commentId)
+    .then((result) => {
+      if (result.affectedRows > 0) {
+        res.status(200).json({ message: "Vote removed successfully" });
+      } else {
+        res.status(404).json({ message: "Vote not found" });
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({ message: "An error occurred", err });
+    });
+});
+
+// Get the current vote status of a comment
+app.get("/comments/:id/vote-status", async function (req, res) {
+  const commentId = req.params.id;
+  const userId = req.query.userId;
+
+  try {
+    const result = await comment.getVoteStatus(userId, commentId);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ message: "An error occurred", err });
+  }
+});
+
 module.exports = app;

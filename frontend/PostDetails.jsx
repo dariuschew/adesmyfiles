@@ -1,3 +1,4 @@
+//state management
 //concurrent for handleDeletedComment, handleNewCommentSection, handleDeletePost
 // PostDetails.jsx
 import React, { useState, useRef, useEffect } from "react";
@@ -103,45 +104,103 @@ const PostDetails = () => {
     );
   };
 
-  const handleCommentUpvote = async (commentId) => {
+  // const handleCommentUpvote = async (commentId) => {
+  //   try {
+  //     const response = await axios.put(
+  //       `${API_URL}/comments/upvote/${commentId}`
+  //     );
+  //     if (response.status === 200) {
+  //       // Update the comments state with the new upvote count
+  //       setComments((prevComments) =>
+  //         prevComments.map((comment) =>
+  //           comment.comment_id === commentId
+  //             ? { ...comment, comment_upvotes: comment.comment_upvotes + 1 }
+  //             : comment
+  //         )
+  //       );
+  //     }
+  //   } catch (error) {
+  //     console.error("Error upvoting comment:", error);
+  //   }
+  // };
+
+  // const handleCommentDownvote = async (commentId) => {
+  //   try {
+  //     const response = await axios.put(
+  //       `${API_URL}/comments/downvote/${commentId}`
+  //     );
+  //     if (response.status === 200) {
+  //       // Update the comments state with the new downvote count
+  //       setComments((prevComments) =>
+  //         prevComments.map((comment) =>
+  //           comment.comment_id === commentId
+  //             ? { ...comment, comment_downvotes: comment.comment_downvotes + 1 }
+  //             : comment
+  //         )
+  //       );
+  //     }
+  //   } catch (error) {
+  //     console.error("Error downvoting comment:", error);
+  //   }
+  // };
+
+  // [SEQUENTIAL]
+  const handleCommentVote = async (commentId, voteType) => {
     try {
-      const response = await axios.put(
-        `${API_URL}/comments/upvote/${commentId}`
+      // First, register the vote
+      const voteResponse = await axios.post(
+        `${API_URL}/comments/${commentId}/vote`,
+        {
+          userId: 1, // Replace with the actual current user's ID
+          voteType: voteType,
+        }
       );
-      if (response.status === 200) {
-        // Update the comments state with the new upvote count
-        setComments((prevComments) =>
-          prevComments.map((comment) =>
-            comment.comment_id === commentId
-              ? { ...comment, comment_upvotes: comment.comment_upvotes + 1 }
-              : comment
-          )
+
+      if (
+        voteResponse.status === 201 &&
+        !voteResponse.data.result.alreadyVoted
+      ) {
+        // Then, update the vote count
+        const voteCountEndpoint = voteType === "upvote" ? "upvote" : "downvote";
+        const voteCountResponse = await axios.put(
+          `${API_URL}/comments/${voteCountEndpoint}/${commentId}`
         );
+
+        if (voteCountResponse.status === 200) {
+          // Update the comments state with the new vote count
+          setComments((prevComments) =>
+            prevComments.map((comment) =>
+              comment.comment_id === commentId
+                ? {
+                    ...comment,
+                    comment_upvotes:
+                      voteType === "upvote"
+                        ? comment.comment_upvotes + 1
+                        : comment.comment_upvotes,
+                    comment_downvotes:
+                      voteType === "downvote"
+                        ? comment.comment_downvotes + 1
+                        : comment.comment_downvotes,
+                  }
+                : comment
+            )
+          );
+        }
+      } else if (voteResponse.data.result.alreadyVoted) {
+        console.log("You have already voted this way.");
       }
     } catch (error) {
-      console.error("Error upvoting comment:", error);
+      console.error(
+        `Error when attempting to ${voteType} vote comment:`,
+        error
+      );
     }
   };
 
-  const handleCommentDownvote = async (commentId) => {
-    try {
-      const response = await axios.put(
-        `${API_URL}/comments/downvote/${commentId}`
-      );
-      if (response.status === 200) {
-        // Update the comments state with the new downvote count
-        setComments((prevComments) =>
-          prevComments.map((comment) =>
-            comment.comment_id === commentId
-              ? { ...comment, comment_downvotes: comment.comment_downvotes + 1 }
-              : comment
-          )
-        );
-      }
-    } catch (error) {
-      console.error("Error downvoting comment:", error);
-    }
-  };
+  const handleCommentUpvote = (commentId) =>
+    handleCommentVote(commentId, "upvote");
+  const handleCommentDownvote = (commentId) =>
+    handleCommentVote(commentId, "downvote");
 
   const fetchComments = async (sortBy = "") => {
     try {
@@ -314,8 +373,8 @@ const PostDetails = () => {
               <Comment
                 key={comment.comment_id}
                 comment={comment}
-                onUpvote={handleCommentUpvote}
-                onDownvote={handleCommentDownvote}
+                onUpvote={() => handleCommentUpvote(comment.comment_id)}
+                onDownvote={() => handleCommentDownvote(comment.comment_id)}
                 currentUserId={1}
                 onDelete={handleDeleteComment}
                 onEdit={handleEditComment}

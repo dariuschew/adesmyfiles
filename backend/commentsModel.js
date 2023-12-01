@@ -211,6 +211,77 @@ var commentFunctions = {
       if (conn) conn.release();
     }
   },
+
+  // Function to create or update a vote for a comment [SEQUENTIAL]
+  createOrUpdateVote: async function (userId, commentId, voteType) {
+    var conn;
+    try {
+      conn = await db.getConnection();
+      console.log("Creating or updating vote for comment", {
+        userId,
+        commentId,
+        voteType,
+      });
+
+      const checkSql =
+        "SELECT vote_type FROM CommentLikes WHERE user_id = ? AND comment_id = ?";
+      const [checkResult] = await conn.query(checkSql, [userId, commentId]);
+
+      console.log("Check vote result for comment", checkResult);
+
+      if (checkResult.length > 0 && checkResult[0].vote_type === voteType) {
+        console.log("User has already voted this way on comment", voteType);
+        return { alreadyVoted: true };
+      }
+
+      const sql = `
+      INSERT INTO CommentLikes (user_id, comment_id, vote_type) 
+      VALUES (?, ?, ?) 
+      ON DUPLICATE KEY UPDATE 
+      vote_type = VALUES(vote_type)`;
+      const [result] = await conn.query(sql, [userId, commentId, voteType]);
+
+      console.log("Vote recorded or updated for comment", result);
+      return { alreadyVoted: false, result };
+    } catch (err) {
+      console.error("Error in createOrUpdateVote function for comment", err);
+      throw err;
+    } finally {
+      if (conn) conn.release();
+      console.log("Database connection released for comment voting");
+    }
+  },
+
+  // Function to remove a vote for a comment
+  removeVote: async function (userId, commentId) {
+    var conn;
+    try {
+      conn = await db.getConnection();
+      const sql =
+        "DELETE FROM CommentLikes WHERE user_id = ? AND comment_id = ?";
+      const [result] = await conn.query(sql, [userId, commentId]);
+      return result;
+    } catch (err) {
+      throw err;
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+
+  getVoteStatus: async function (userId, commentId) {
+    var conn;
+    try {
+      conn = await db.getConnection();
+      const sql =
+        "SELECT vote_type FROM CommentLikes WHERE user_id = ? AND comment_id = ?";
+      const [result] = await conn.query(sql, [userId, commentId]);
+      return result.length > 0 ? result[0] : { vote_type: null };
+    } catch (err) {
+      throw err;
+    } finally {
+      if (conn) conn.release();
+    }
+  },
 };
 
 module.exports = commentFunctions;

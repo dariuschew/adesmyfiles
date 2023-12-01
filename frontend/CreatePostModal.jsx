@@ -1,3 +1,4 @@
+//state management
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { API_URL } from "../config";
@@ -7,6 +8,7 @@ export default function CreatePostModal({ closeModal, userId }) {
     post_title: "",
     post_desc: "",
     image_id: null,
+    comment_count: 1,
     tag_id: null,
     poster_id: userId || 1, // for testing LOL
   });

@@ -19,6 +19,8 @@ app.get("/posts", function (req, res) {
     `Received request to get all posts. Page: ${page}, Limit: ${limit}`
   );
 
+  console.log ('the sortBy is ' + sortBy + " in get posts")
+
   post
     .getAllPosts(page, limit, sortBy)
     .then((data) => {
@@ -26,6 +28,7 @@ app.get("/posts", function (req, res) {
       console.log(
         `Retrieved posts. Total: ${total}, Posts on current page: ${posts.length}`
       );
+      console.log("bruh " + JSON.stringify(posts, null, 2));
       res.status(200).json({
         total: total,
         posts: posts.map((p) => p.toObject()),
@@ -163,6 +166,10 @@ app.get("/posts/sorted/:sortBy", function (req, res) {
   console.log(
     `Received request to get posts sorted by: ${sortBy} with page: ${page} and limit: ${limit}`
   );
+
+  console.log ('the sortBy is ' + sortBy + " in sortBy")
+
+
   post
     .getPostsSorted(sortBy, limit, offset)
     .then((data) => {
@@ -189,6 +196,8 @@ app.get("/posts/search-and-sort", function (req, res) {
   console.log(
     `Received request to search and sort posts by: searchTerm=${searchTerm}, sortBy=${sortBy}, page=${page}, limit=${limit} , searchType=${searchType}`
   );
+
+  console.log ('the sortBy is ' + sortBy + " in search-and-sort")
 
   post
     .searchAndSortPosts(searchTerm, sortBy, limit, offset, searchType)
@@ -277,6 +286,53 @@ app.get("/top-contributors", async function (req, res) {
   } catch (err) {
     console.error("Error retrieving top contributors:", err);
     res.status(500).send(err);
+  }
+});
+
+// CREATE or UPDATE a vote for a post
+app.post("/posts/:id/vote", function (req, res) {
+  const postId = req.params.id;
+  const userId = req.body.userId;
+  const voteType = req.body.voteType;
+
+  post
+    .createOrUpdateVote(userId, postId, voteType)
+    .then((result) => {
+      res.status(201).json({ message: "Vote registered successfully", result });
+    })
+    .catch((err) => {
+      res.status(500).json({ message: "An error occurred", err });
+    });
+});
+
+// REMOVE a vote from a post
+app.delete("/posts/:id/vote", function (req, res) {
+  const postId = req.params.id;
+  const userId = req.body.userId;
+
+  post
+    .removeVote(userId, postId)
+    .then((result) => {
+      if (result.affectedRows > 0) {
+        res.status(200).json({ message: "Vote removed successfully" });
+      } else {
+        res.status(404).json({ message: "Vote not found" });
+      }
+    })
+    .catch((err) => {
+      res.status(500).json({ message: "An error occurred", err });
+    });
+});
+
+app.get("/posts/:id/vote-status", async function (req, res) {
+  const postId = req.params.id;
+  const userId = req.query.userId;
+
+  try {
+    const result = await post.getVoteStatus(userId, postId);
+    res.status(200).json(result);
+  } catch (err) {
+    res.status(500).json({ message: "An error occurred", err });
   }
 });
 

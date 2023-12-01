@@ -34,6 +34,7 @@ var postFunctions = {
 
       console.log(`Received postsResult with length: ${postsResult[0].length}`);
       console.log(`Received countResult: ${JSON.stringify(countResult[0])}`);
+      console.log(`Received postsResult: ${JSON.stringify(postsResult[0])}`);
 
       let posts = [];
 
@@ -198,29 +199,59 @@ var postFunctions = {
   //   }
   // },
 
-  // Function to create a new post
+  // Function to create a new post [SEQUENTIAL]
   createPost: async function (postData) {
     var conn;
     try {
       conn = await db.getConnection();
-      const sql = "INSERT INTO Posts SET ?";
-      const [result] = await conn.query(sql, postData);
-      return result;
+      await conn.beginTransaction(); // Start transaction
+
+      // Insert the post data
+      const postSql = "INSERT INTO Posts SET ?";
+      const [postResult] = await conn.query(postSql, postData);
+      const postId = postResult.insertId;
+      const posterId = postData.poster_id;
+
+      const defaultCommentData = {
+        user_id: posterId,
+        post_id: postId,
+        comment: "Thank you for your post! We are looking into it.",
+      };
+
+      // Insert the default comment data
+      const commentSql = "INSERT INTO Comments SET ?";
+      await conn.query(commentSql, defaultCommentData);
+
+      await conn.commit(); // Commit the transaction
+      return { postId, commentId: defaultCommentData.comment_id };
     } catch (error) {
-      console.error("Error executing createPost query:", error);
+      await conn.rollback(); // Roll back the transaction on error
+      console.error("Error executing createPost with default comment:", error);
       throw error;
     } finally {
-      if (conn) conn.release();
+      if (conn) conn.release(); // Release the connection back to the pool
     }
   },
 
   // Function to update a post
   updatePost: async function (postId, postData) {
+    console.log("the postdata is " + JSON.stringify(postData, null, 2));
     var conn;
+    var post_title = postData.post_title;
+    var tag_id = postData.tag_id;
+    var post_desc = postData.post_desc;
+
     try {
       conn = await db.getConnection();
-      const sql = "UPDATE Posts SET ? WHERE post_id = ?";
-      const [result] = await conn.query(sql, [postData, postId]);
+      const sql = `UPDATE Posts 
+      SET post_title = ?, tag_id = ?, post_desc = ?
+      WHERE post_id = ?;`;
+      const [result] = await conn.query(sql, [
+        post_title,
+        tag_id,
+        post_desc,
+        postId,
+      ]);
       return result;
     } catch (error) {
       console.error("Error executing updatePost query:", error);
@@ -544,57 +575,118 @@ var postFunctions = {
 
   // Function to get the top 3 contributors
   getTopContributors: async function () {
+    let conn;
+    try {
+      conn = await db.getConnection();
+
+      // Fetch users
+      const usersQuery = `
+      SELECT 
+        u.user_id, 
+        u.full_name, 
+        u.email, 
+        i.image_url 
+      FROM Users u
+      LEFT JOIN Images i ON u.image_id = i.image_id;
+    `;
+      const [users] = await conn.query(usersQuery);
+
+      // Fetch posts data
+      const postsQuery = `SELECT poster_id, COUNT(*) AS post_count, SUM(post_upvotes) AS upvote_count, SUM(post_downvotes) AS downvote_count FROM Posts GROUP BY poster_id;`;
+      const [posts] = await conn.query(postsQuery);
+
+      // Fetch comments data
+      const commentsQuery = `SELECT user_id, COUNT(*) AS comment_count FROM Comments GROUP BY user_id;`;
+      const [comments] = await conn.query(commentsQuery);
+
+      const contributors = users.map((user) => {
+        const userPosts = posts.find(
+          (post) => post.poster_id === user.user_id
+        ) || { post_count: 0, upvote_count: 0, downvote_count: 0 };
+        const userComments = comments.find(
+          (comment) => comment.user_id === user.user_id
+        ) || { comment_count: 0 };
+
+        return {
+          ...user,
+          post_count: userPosts.post_count,
+          comment_count: userComments.comment_count,
+          upvote_count: userPosts.upvote_count,
+          downvote_count: userPosts.downvote_count,
+          total_activity: userPosts.post_count + userComments.comment_count,
+        };
+      });
+
+      contributors.sort((a, b) => b.total_activity - a.total_activity);
+      return contributors.slice(0, 3);
+    } catch (err) {
+      console.log(err);
+      throw err;
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+
+  // Function to create or update a vote for a post [SEQUENTIAL]
+  createOrUpdateVote: async function (userId, postId, voteType) {
     var conn;
     try {
       conn = await db.getConnection();
+      console.log("Creating or updating vote", { userId, postId, voteType });
+
+      const checkSql =
+        "SELECT vote_type FROM PostLikes WHERE user_id = ? AND post_id = ?";
+      const [checkResult] = await conn.query(checkSql, [userId, postId]);
+
+      console.log("Check vote result", checkResult);
+
+      if (checkResult.length > 0 && checkResult[0].vote_type === voteType) {
+        console.log("User has already voted this way", voteType);
+        return { alreadyVoted: true };
+      }
+
       const sql = `
-      SELECT 
-      u.user_id,
-      u.full_name,
-      u.email,
-      COALESCE(p.post_count, 0) AS post_count,
-      COALESCE(c.comment_count, 0) AS comment_count,
-      COALESCE(up.upvote_count, 0) AS upvote_count,
-      COALESCE(down.downvote_count, 0) AS downvote_count
-  FROM 
-      Users u
-  LEFT JOIN (
-      SELECT 
-          poster_id, 
-          COUNT(*) AS post_count,
-          SUM(post_upvotes) AS upvote_count,
-          SUM(post_downvotes) AS downvote_count
-      FROM Posts
-      GROUP BY poster_id
-  ) p ON u.user_id = p.poster_id
-  LEFT JOIN (
-      SELECT 
-          user_id, 
-          COUNT(*) AS comment_count
-      FROM Comments
-      GROUP BY user_id
-  ) c ON u.user_id = c.user_id
-  LEFT JOIN (
-      SELECT 
-          poster_id, 
-          SUM(post_upvotes) AS upvote_count
-      FROM Posts
-      GROUP BY poster_id
-  ) up ON u.user_id = up.poster_id
-  LEFT JOIN (
-      SELECT 
-          poster_id, 
-          SUM(post_downvotes) AS downvote_count
-      FROM Posts
-      GROUP BY poster_id
-  ) down ON u.user_id = down.poster_id
-  ORDER BY (COALESCE(p.post_count, 0) + COALESCE(c.comment_count, 0)) DESC
-  LIMIT 3;
-  `;
-      const [result] = await conn.query(sql);
+        INSERT INTO PostLikes (user_id, post_id, vote_type) 
+        VALUES (?, ?, ?) 
+        ON DUPLICATE KEY UPDATE 
+        vote_type = VALUES(vote_type)`;
+      const [result] = await conn.query(sql, [userId, postId, voteType]);
+
+      console.log("Vote recorded or updated", result);
+      return { alreadyVoted: false, result };
+    } catch (err) {
+      console.error("Error in createOrUpdateVote function", err);
+      throw err;
+    } finally {
+      if (conn) conn.release();
+      console.log("Database connection released");
+    }
+  },
+
+  // Function to remove a vote for a post
+  removeVote: async function (userId, postId) {
+    var conn;
+    try {
+      conn = await db.getConnection();
+      const sql = "DELETE FROM PostLikes WHERE user_id = ? AND post_id = ?";
+      const [result] = await conn.query(sql, [userId, postId]);
       return result;
     } catch (err) {
-      console.log(err);
+      throw err;
+    } finally {
+      if (conn) conn.release();
+    }
+  },
+
+  getVoteStatus: async function (userId, postId) {
+    var conn;
+    try {
+      conn = await db.getConnection();
+      const sql =
+        "SELECT vote_type FROM PostLikes WHERE user_id = ? AND post_id = ?";
+      const [result] = await conn.query(sql, [userId, postId]);
+      return result.length > 0 ? result[0] : { vote_type: null };
+    } catch (err) {
       throw err;
     } finally {
       if (conn) conn.release();

@@ -1,8 +1,9 @@
-import React, { useState, useRef } from "react";
+//state management
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { FaThumbsUp, FaThumbsDown, FaPen, FaTrash } from "react-icons/fa";
 import { API_URL } from "../config";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from "react-router-dom";
 
 const PostDetailsCard = ({
   post,
@@ -10,36 +11,100 @@ const PostDetailsCard = ({
   onVoteChange,
   onDeletePost,
 }) => {
+  const [userVote, setUserVote] = useState(null);
+
+  useEffect(() => {
+    const fetchVoteStatus = async () => {
+      try {
+        const response = await axios.get(
+          `${API_URL}/posts/${post.post_id}/vote-status`,
+          { params: { userId: currentUserId } }
+        );
+
+        if (response.data.vote_type === "upvote") {
+          setUserVote("upvote");
+        } else if (response.data.vote_type === "downvote") {
+          setUserVote("downvote");
+        }
+      } catch (error) {
+        console.error("Error fetching vote status:", error);
+      }
+    };
+
+    fetchVoteStatus();
+  }, [post.post_id, currentUserId]);
+
   const formatDate = (dateString) => {
     const options = { year: "numeric", month: "long", day: "numeric" };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
 
-  const handleUpvote = async () => {
+  // const handleUpvote = async () => {
+  //   try {
+  //     const response = await axios.post(
+  //       `${API_URL}/posts/${post.post_id}/upvote`
+  //     );
+  //     if (response.status === 200) {
+  //       onVoteChange(post.post_id, post.post_upvotes + 1, post.post_downvotes);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error upvoting post:", error);
+  //   }
+  // };
+
+  // const handleDownvote = async () => {
+  //   try {
+  //     const response = await axios.post(
+  //       `${API_URL}/posts/${post.post_id}/downvote`
+  //     );
+  //     if (response.status === 200) {
+  //       onVoteChange(post.post_id, post.post_upvotes, post.post_downvotes + 1);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error downvoting post:", error);
+  //   }
+  // };
+
+  const handleVote = async (voteType) => {
     try {
-      const response = await axios.post(
-        `${API_URL}/posts/${post.post_id}/upvote`
+      const voteResponse = await axios.post(
+        `${API_URL}/posts/${post.post_id}/vote`,
+        {
+          userId: currentUserId,
+          voteType: voteType,
+        }
       );
-      if (response.status === 200) {
-        onVoteChange(post.post_id, post.post_upvotes + 1, post.post_downvotes);
+
+      if (
+        voteResponse.status === 201 &&
+        !voteResponse.data.result.alreadyVoted
+      ) {
+        const voteCountEndpoint = voteType === "upvote" ? "upvote" : "downvote";
+        const voteCountResponse = await axios.post(
+          `${API_URL}/posts/${post.post_id}/${voteCountEndpoint}`
+        );
+
+        if (voteCountResponse.status === 200) {
+          const newUpvotes =
+            voteType === "upvote" ? post.post_upvotes + 1 : post.post_upvotes;
+          const newDownvotes =
+            voteType === "downvote"
+              ? post.post_downvotes + 1
+              : post.post_downvotes;
+
+          onVoteChange(post.post_id, newUpvotes, newDownvotes);
+          setUserVote(voteType);
+        }
+      } else if (voteResponse.data.result.alreadyVoted) {
+        console.log("You have already voted this way.");
       }
     } catch (error) {
-      console.error("Error upvoting post:", error);
+      console.error(`Error when attempting to ${voteType} vote post:`, error);
     }
   };
 
-  const handleDownvote = async () => {
-    try {
-      const response = await axios.post(
-        `${API_URL}/posts/${post.post_id}/downvote`
-      );
-      if (response.status === 200) {
-        onVoteChange(post.post_id, post.post_upvotes, post.post_downvotes + 1);
-      }
-    } catch (error) {
-      console.error("Error downvoting post:", error);
-    }
-  };
+  const handleUpvote = () => handleVote("upvote");
+  const handleDownvote = () => handleVote("downvote");
 
   const navigate = useNavigate();
 
@@ -97,21 +162,25 @@ const PostDetailsCard = ({
         <div className="flex flex-row p-5">
           {" "}
           <button
-            className="vote-button p-1"
+            className={`vote-button p-1 ${
+              userVote === "upvote" ? "text-blue-600" : "text-gray-600"
+            } hover:text-gray-800`}
             onClick={handleUpvote}
             aria-label="Upvote"
           >
-            <FaThumbsUp className="text-gray-600 hover:text-gray-800" />
+            <FaThumbsUp />
           </button>
           <div className="vote-count text-gray-600 font-semibold pl-2 pr-2 pt-1">
             {post.post_upvotes - post.post_downvotes}
           </div>
           <button
-            className="vote-button p-1"
+            className={`vote-button p-1 ${
+              userVote === "downvote" ? "text-red-600" : "text-gray-600"
+            } hover:text-gray-800`}
             onClick={handleDownvote}
             aria-label="Downvote"
           >
-            <FaThumbsDown className="text-gray-600 hover:text-gray-800" />
+            <FaThumbsDown />
           </button>
         </div>
       </div>

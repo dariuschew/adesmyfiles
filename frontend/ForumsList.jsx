@@ -1,3 +1,4 @@
+//state management
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import ForumsCard from "./ForumsCard";
@@ -14,16 +15,25 @@ const ForumsList = () => {
   const [postsPerPage, setPostsPerPage] = useState(5);
   const [totalPosts, setTotalPosts] = useState(0);
   const [activeFilter, setActiveFilter] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    fetchAllPosts();
-  }, [currentPage, postsPerPage, activeFilter, searchTerm]);
+    console.log("Posts updated:", posts);
+  }, [posts]);
+
+  useEffect(() => {
+    console.log(`Active Filter changed: ${activeFilter}`);
+  }, [activeFilter]);
 
   const fetchAllPosts = async () => {
+    setPosts([]);
+    setIsLoading(true);
     console.log("fetchAllPosts started");
 
     let endpoint = searchTerm.trim() ? "/posts/search-and-sort" : "/posts";
     console.log(`Endpoint determined: ${endpoint}`);
+
+    console.log(`Active Filter before setting params: ${activeFilter}`);
 
     const params = {
       page: currentPage,
@@ -31,6 +41,7 @@ const ForumsList = () => {
       sortBy: activeFilter,
     };
     console.log("Initial params set", params);
+    console.log("Params after adjusting for searchTerm", params);
 
     console.log(
       `Fetching posts with searchTerm: ${searchTerm}, searchType: ${searchType}, activeFilter: ${activeFilter}, currentPage: ${currentPage}`
@@ -51,7 +62,7 @@ const ForumsList = () => {
       }
       console.log("Final params after searchType adjustment", params);
     } else if (activeFilter) {
-      console.log("Active filter is present without searchTerm");
+      console.log("Active filter is present without searchTerm", activeFilter);
       params.sortBy = activeFilter;
     }
 
@@ -60,6 +71,7 @@ const ForumsList = () => {
         `Making API call to ${API_URL}${endpoint} with params`,
         params
       );
+      console.log(`Parameters used for API call:`, params);
       const response = await axios.get(`${API_URL}${endpoint}`, { params });
       console.log("API call successful. Response received:", response);
 
@@ -87,7 +99,13 @@ const ForumsList = () => {
     }
 
     console.log("fetchAllPosts completed");
+    setIsLoading(false);
   };
+
+  useEffect(() => {
+    fetchAllPosts();
+    console.log(posts);
+  }, [currentPage, postsPerPage, activeFilter, searchTerm]);
 
   const handleSearchChange = (event) => {
     setSearchTerm(event.target.value);
@@ -124,9 +142,9 @@ const ForumsList = () => {
   };
 
   const handleFilterChange = (filter) => {
+    console.log("the filter is " + filter);
     setActiveFilter(filter);
     setCurrentPage(1);
-    fetchAllPosts();
   };
 
   const totalPages = Math.ceil(totalPosts / postsPerPage);
@@ -134,6 +152,12 @@ const ForumsList = () => {
   const handlePageChange = (page) => {
     setCurrentPage(page);
     window.scrollTo(0, 0);
+  };
+
+  const safeCalculateVotes = (upvotes, downvotes) => {
+    const up = Number(upvotes);
+    const down = Number(downvotes);
+    return !isNaN(up) && !isNaN(down) ? up - down : 0;
   };
 
   return (
@@ -151,33 +175,61 @@ const ForumsList = () => {
             />
           </div>
 
-          <FilterComponent
-            activeFilter={activeFilter}
-            onFilterChange={handleFilterChange}
-          />
+          {/* Filter buttons */}
+          <div className="flex space-x-2 my-4">
+            <button
+              onClick={() => handleFilterChange("recent")}
+              className={`px-4 py-2 text-sm font-medium text-white rounded-md ${
+                activeFilter === "recent"
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-gray-600 hover:bg-gray-700"
+              }`}
+            >
+              Recent
+            </button>
+            <button
+              onClick={() => handleFilterChange("upvotes")}
+              className={`px-4 py-2 text-sm font-medium text-white rounded-md ${
+                activeFilter === "upvotes"
+                  ? "bg-blue-600 hover:bg-blue-700"
+                  : "bg-gray-600 hover:bg-gray-700"
+              }`}
+            >
+              By Upvotes
+            </button>
+          </div>
 
-          {posts.length > 0 ? (
-            posts.map((post) => (
-              <ForumsCard
-                key={post.post_id}
-                postId={post.post_id}
-                post_title={post.post_title}
-                tag_name={post.tag_name}
-                post_desc={post.post_desc}
-                username={post.username}
-                poster_id={post.poster_id}
-                time_created={post.time_created}
-                comment_count={post.comment_count}
-                post_upvotes={post.post_upvotes}
-                post_downvotes={post.post_downvotes}
-                image_url={post.image_url}
-                user_image_url={post.user_image_url}
-                onVoteChange={handleVoteChange}
-              />
-            ))
-          ) : (
+          {isLoading ? (
             <div className="text-center py-10">
-              <p>No posts found. Try a different search term or filter.</p>
+              <p>Loading...</p>
+            </div>
+          ) : (
+            <div>
+              {posts.length > 0 ? (
+                posts.map((post) => (
+                  <ForumsCard
+                    key={post.post_id}
+                    postId={post.post_id}
+                    post_title={post.post_title}
+                    tag_name={post.tag_name}
+                    post_desc={post.post_desc}
+                    username={post.username}
+                    poster_id={post.poster_id}
+                    time_created={post.time_created}
+                    comment_count={post.comment_count}
+                    post_upvotes={post.post_upvotes}
+                    post_downvotes={post.post_downvotes}
+                    image_url={post.image_url}
+                    user_image_url={post.user_image_url}
+                    onVoteChange={handleVoteChange}
+                    safeCalculateVotes={safeCalculateVotes}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-10">
+                  <p>No posts found. Try a different search term or filter.</p>
+                </div>
+              )}
             </div>
           )}
 

@@ -1,3 +1,4 @@
+//state management
 // EditPost.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -5,13 +6,14 @@ import axios from "axios";
 import { API_URL } from "../config";
 import { Transition } from "@headlessui/react";
 import { FaEdit } from "react-icons/fa";
+import EditImageBtn from "../components/EditImageBtn";
 
 const EditPost = () => {
   const [post, setPost] = useState({
     post_title: "",
     post_desc: "",
     tag_id: "",
-    image_url: "",
+    // image_url: "",
   });
 
   const createTagRef = useRef(null);
@@ -96,19 +98,13 @@ const EditPost = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const formData = new FormData();
-    Object.entries(post).forEach(([key, value]) => {
-      formData.append(key, value);
-    });
 
     try {
-      console.log("im in the try postID is " + postId);
-      console.log("the data is ", formData);
       const response = await axios({
         method: "put",
         url: `${API_URL}/posts/${postId}`,
-        data: formData,
-        headers: { "Content-Type": "multipart/form-data" },
+        data: post,
+        headers: { "Content-Type": "application/json" },
       });
       if (response.status === 200) {
         navigate(`/posts/${postId}`);
@@ -158,6 +154,7 @@ const EditPost = () => {
                 >
                   <FaEdit size={20} />
                 </button>
+                {/* <EditImageBtn /> */}
               </div>
               <input
                 type="file"

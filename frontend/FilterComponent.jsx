@@ -2,8 +2,9 @@ import React from "react";
 
 const FilterComponent = ({ activeFilter, onFilterChange }) => {
   const handleFilterClick = (filter) => {
-    const newFilter = activeFilter === filter ? "" : filter;
-    onFilterChange(newFilter); 
+    if (activeFilter !== filter) {
+      onFilterChange(filter);
+    }
   };
 
   return (
@@ -31,5 +32,4 @@ const FilterComponent = ({ activeFilter, onFilterChange }) => {
     </div>
   );
 };
-
 export default FilterComponent;
